@@ -1,0 +1,18 @@
+# Python build artifacts
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+**/*.egg-info
+
+# Version control
+.git
+.gitignore
+.github
+
+# Development/Local data (assuming these aren't needed in production)
+tests/
+sample_data/
+*.md
+
+.env*
