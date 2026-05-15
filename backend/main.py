@@ -24,7 +24,7 @@ PROTECTED_CHARACTERISTICS = ["age", "gender", "ethnicity", "race", "sex"]
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "not buggered"}
 
 
 @app.post("/audit")
