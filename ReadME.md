@@ -1,4 +1,3 @@
-This is a complete `README.md` for your **Bias Auditor** project. It is structured to guide both users and developers through the setup, the logic of the auditing process, and how to use the interface.
 
 ---
 
@@ -98,5 +97,8 @@ The Bias Auditor is intended for **internal fairness monitoring only**. While it
 
 ## 👨‍💻 Author/Acknowledgements
 
-**Google Gemini** for this ReadMe 
-**cswan300** — [GitHub Profile](https://github.com/cswan300)
+>
+>
+> **Google Gemini** for this ReadMe
+---
+> **cswan300** — [GitHub Profile](https://github.com/cswan300)
