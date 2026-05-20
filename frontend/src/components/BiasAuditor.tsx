@@ -3,7 +3,7 @@ import { AuditResponse } from '../types';
 import RiskBanner from './RiskBanner';
 import AuditCard from './AuditCard';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = window.location.protocol + "//" + window.location.hostname + ":8000";
 
 export const BiasAuditor: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
