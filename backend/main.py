@@ -52,7 +52,7 @@ def process_audit_logic(df: pd.DataFrame, threshold_str: str, p_cols_raw: Option
         try:
             # Handle JSON list from React or plain string
             p_cols = json.loads(p_cols_raw) if isinstance(p_cols_raw, str) else p_cols_raw
-        except:
+        except Exception:  # Fixed E722
             p_cols = [c.strip() for c in str(p_cols_raw).split(",") if c.strip()]
 
     # Auto-detect characteristics if the list is still empty
@@ -64,7 +64,6 @@ def process_audit_logic(df: pd.DataFrame, threshold_str: str, p_cols_raw: Option
         p_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()[:2]
 
     # 3. Sanitize Outcome Column (The 'Not Specified' Fix)
-    # CRITICAL: We pass None to the auditor if no valid column is provided.
     target = None
     forbidden_values = ["", "null", "undefined", "not specified", "auto-detected"]
     if outcome_col and str(outcome_col).lower() not in forbidden_values:
@@ -72,7 +71,6 @@ def process_audit_logic(df: pd.DataFrame, threshold_str: str, p_cols_raw: Option
 
     # 4. Run Analysis
     auditor = BiasAuditor(df, fairness_threshold=threshold)
-    # The auditor.full_audit logic will now handle target=None correctly
     results = auditor.full_audit(p_cols, target)
 
     # 5. Populate Metadata for UI
@@ -127,19 +125,15 @@ async def generate_pdf_report(
         df = get_clean_df(file)
 
         def run_pdf_task():
-            # Uses the exact same logic as /audit to ensure data parity
             result, threshold = process_audit_logic(df, fairness_threshold, protected_columns, outcome_column)
             return build_pdf_response(result, org_name, threshold=threshold)
 
         return await run_in_threadpool(run_pdf_task)
     except Exception as e:
         print(f"❌ PDF ERROR: {traceback.format_exc()}")
-        # Raising an HTTPException ensures the React frontend gets a 500 status code
         raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
     import uvicorn
-
-    # Bound to 127.0.0.1:9999 for local Windows stability because i swear to fucking
     uvicorn.run(app, host="127.0.0.1", port=9999)

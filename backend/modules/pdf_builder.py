@@ -9,7 +9,6 @@ from reportlab.graphics.charts.barcharts import VerticalBarChart
 
 
 def create_bar_chart(groups):
-    # Ensure groups is a list and not empty
     if not groups:
         return Spacer(1, 10)
 
@@ -17,7 +16,6 @@ def create_bar_chart(groups):
     bc = VerticalBarChart()
     bc.x, bc.y, bc.height, bc.width = 50, 40, 100, 300
 
-    # Safely extract rates, defaulting to 0 if missing
     rates = [float(g.get('rate', 0)) for g in groups]
     bc.data = [tuple(rates)]
 
@@ -34,12 +32,10 @@ def generate_pdf_content(result: dict, org_name: str, threshold: float) -> bytes
     styles = getSampleStyleSheet()
     story = []
 
-    # Colors
     RED = colors.HexColor("#ef4444")
     ORANGE = colors.HexColor("#f59e0b")
     GREEN = colors.HexColor("#22c55e")
 
-    # Safe access to overall_risk
     risk = result.get("overall_risk", {})
     risk_level = str(risk.get("level", "UNKNOWN")).upper()
 
@@ -49,14 +45,12 @@ def generate_pdf_content(result: dict, org_name: str, threshold: float) -> bytes
     elif "MODERATE" in risk_level:
         risk_color = ORANGE
 
-    # Header
     story.append(Paragraph("⚖ ALGORITHMIC BIAS AUDIT REPORT", styles["Title"]))
     story.append(HRFlowable(width="100%", thickness=1.5, color=colors.black, spaceAfter=10))
 
-    # Meta Table
     try:
         display_threshold = f"{int(float(threshold) * 100)}%"
-    except:
+    except Exception:  # Fixed E722
         display_threshold = "80%"
 
     meta_data = [
@@ -72,14 +66,12 @@ def generate_pdf_content(result: dict, org_name: str, threshold: float) -> bytes
     ]))
     story.append(t)
 
-    # Audits Loop
     audits = result.get("audits", [])
     if not audits:
         story.append(Spacer(1, 20))
         story.append(Paragraph("No audit data available for this report.", styles["Normal"]))
 
     for audit in audits:
-        # DEFENSIVE ACCESS: This was likely the 'None' source
         disparity = audit.get('disparity', {})
         is_flagged = disparity.get('flag', False)
         char_name = audit.get('characteristic', 'Unknown Attribute')
@@ -93,7 +85,6 @@ def generate_pdf_content(result: dict, org_name: str, threshold: float) -> bytes
             f"Status: <font color='{status_color}'><b>{status_text}</b></font>",
             styles["Normal"]))
 
-        # Add Chart
         try:
             chart = create_bar_chart(audit.get('groups', []))
             story.append(chart)

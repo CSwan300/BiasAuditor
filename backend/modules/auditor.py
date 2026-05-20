@@ -9,7 +9,6 @@ from .mitigation import suggest_mitigation
 class BiasAuditor:
     def __init__(self, df: pd.DataFrame, fairness_threshold: float):
         self.df = df.copy()
-        # Normalize threshold (80 -> 0.8)
         self.fairness_threshold = float(fairness_threshold) if fairness_threshold <= 1 else float(
             fairness_threshold) / 100
         self._preprocess()
@@ -27,13 +26,14 @@ class BiasAuditor:
             ct = pd.crosstab(subset[group_col], subset[outcome_col])
             ct = ct.reindex(index=[group_a, group_b], columns=[0, 1], fill_value=0)
             n_total = ct.values.sum()
-            if n_total < 5: return False
+            if n_total < 5:
+                return False
             if n_total < 30:
                 _, p = fisher_exact(ct.values)
             else:
                 _, p, _, _ = chi2_contingency(ct.values)
             return p < 0.05
-        except:
+        except Exception:  # Fixed E722
             return False
 
     def analyze_attribute(self, protected_col: str, outcome_col: str) -> Dict:
@@ -48,7 +48,6 @@ class BiasAuditor:
 
         stats_df = temp_df.groupby('group')['outcome'].agg(['count', 'mean']).reset_index()
 
-        # Prepare the group_stats dictionary for your suggest_mitigation function
         group_stats_map = {}
         for _, row in stats_df.iterrows():
             group_stats_map[row['group']] = {
@@ -78,8 +77,6 @@ class BiasAuditor:
         di_ratio = float(min_rate / ref_rate) if ref_rate > 0 else 1.0
         is_flagged = bool(di_ratio < self.fairness_threshold)
 
-        # Use your custom logic file to generate mitigations for this attribute
-        # We pass the stats map, whether it passed the audit, and the threshold
         mitigations = suggest_mitigation(
             group_stats=group_stats_map,
             passes=not is_flagged,
@@ -106,8 +103,6 @@ class BiasAuditor:
             res = self.analyze_attribute(col, target)
             if res:
                 audits.append(res)
-                # Collect all mitigations into a single list for the frontend
-                # Filter out the "none" types so only actionable items appear
                 actionable = [m for m in res["attribute_mitigations"] if m["type"] != "none"]
                 all_mitigations.extend(actionable)
 
@@ -134,5 +129,5 @@ class BiasAuditor:
                 "min_group_size_config": MIN_GROUP_SIZE
             },
             "audits": audits,
-            "mitigations": all_mitigations  # This now populates the frontend mitigations section
+            "mitigations": all_mitigations
         }
