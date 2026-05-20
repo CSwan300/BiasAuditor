@@ -1,94 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bias Auditor</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bias Auditor | AI Fairness Toolkit</title>
+  </head>
+  <body>
+    <div id="root"></div>
 
-<header>
-  <div class="logo-mark"><span class="logo-icon">⚖</span></div>
-  <div class="header-text">
-    <h1>Bias Auditor</h1>
-    <p>Fairness & Disparity Analysis Tool</p>
-  </div>
-  <div class="header-badge">v1.0.0</div>
-</header>
-
-<main>
-  <section class="upload-section">
-    <div class="section-label">Dataset Upload</div>
-
-    <div id="drop-zone">
-      <div class="upload-icon">🗂</div>
-      <div class="upload-title">Drop your dataset here</div>
-      <p class="upload-sub">
-        Drag & drop a file, or <span id="browse-link">browse to upload</span>
-      </p>
-      <div class="upload-formats">
-        <span class="fmt-badge">CSV</span>
-        <span class="fmt-badge">XLSX</span>
-        <span class="fmt-badge">XLS</span>
-      </div>
-    </div>
-    <input type="file" id="file-input" accept=".csv,.xlsx,.xls" />
-
-    <div class="file-selected-bar" id="file-bar">
-      <span class="file-icon">📄</span>
-      <span class="file-name" id="file-name-label">—</span>
-      <span class="file-size" id="file-size-label">—</span>
-    </div>
-
-    <div id="error-box"></div>
-
-    <button id="audit-btn">⚡ Run Bias Audit</button>
-  </section>
-
-  <div id="loading">
-    <div class="spinner"></div>
-    <div class="loading-label">Analysing dataset…</div>
-  </div>
-
-  <div id="results">
-    <div class="section-label">Audit Results</div>
-
-    <div id="risk-banner" class="risk-banner">
-      <div id="risk-ring" class="risk-score-ring">0</div>
-      <div class="risk-info">
-        <h2 id="risk-title">—</h2>
-        <p id="risk-desc">—</p>
-      </div>
-      <div class="risk-meta" id="risk-meta"></div>
-    </div>
-
-    <div id="warnings-container"></div>
-
-    <div class="section-label">Dataset Metadata</div>
-    <div class="meta-section">
-      <table class="meta-table" id="meta-table"></table>
-    </div>
-
-    <div class="section-label">Protected Characteristic Analysis</div>
-    <div class="char-grid" id="char-grid"></div>
-
-    <p class="rule-note">
-      Flagging uses the 80% rule (Disparate Impact Ratio &lt; 0.80) — a common legal and industry fairness threshold.<br>
-      DIR = lowest group positive rate ÷ highest group positive rate. Values below 0.80 indicate potential adverse impact.
-    </p>
-
-    <button id="reset-btn">↩ Upload New Dataset</button>
-  </div>
-</main>
-
-<footer>
-  BIAS AUDITOR — FOR INTERNAL FAIRNESS MONITORING USE ONLY<br>
-  <a href="https://github.com/cswan300">GitHub: cswan300</a>
-</footer>
-
-<script src="script.js"></script>
-</body>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
