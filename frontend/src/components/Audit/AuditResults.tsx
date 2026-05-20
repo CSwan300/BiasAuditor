@@ -11,6 +11,8 @@ interface Props {
 }
 
 export const AuditResults: React.FC<Props> = ({ data, onReset, originalFile, threshold }) => {
+  // Sync this constant with your backend port 9999
+  const API_BASE_URL = "http://127.0.0.1:9999";
 
   const handleDownloadPDF = async () => {
     if (!originalFile) {
@@ -22,28 +24,28 @@ export const AuditResults: React.FC<Props> = ({ data, onReset, originalFile, thr
       const formData = new FormData();
       formData.append('file', originalFile);
 
-      /**
-       * CRITICAL FIX:
-       * We MUST send the threshold that matches the DATA currently on screen.
-       * If your 'data' object contains the threshold it was audited with, use that.
-       * Otherwise, use the 'threshold' prop, but warn the user if they've moved the slider.
-       */
+      // 1. Format Threshold
       const safeThreshold = (threshold ?? 0.80).toString();
 
-      // Use optional chaining safely for metadata
-      const protectedCols = data?.metadata?.protected_characteristics_found
-        ? JSON.stringify(data.metadata.protected_characteristics_found)
-        : "[]";
+      // 2. Sanitize Protected Columns
+      // We grab what the backend actually found during the first pass
+      const foundCols = data?.metadata?.protected_characteristics_found || [];
+      formData.append('protected_columns', JSON.stringify(foundCols));
 
-      // Ensure we use the exact outcome column the current data represents
-      const outcomeCol = data?.metadata?.prediction_column || "target";
+      // 3. Sanitize Outcome Column (The 'Not Specified' Fix)
+      // If the UI shows "Auto-detected" or "Not Specified", send an empty string
+      // so the backend doesn't try to look for a column with that literal name.
+      const rawOutcome = data?.metadata?.prediction_column || "";
+      const forbidden = ["not specified", "auto-detected", "null", "undefined"];
+      const safeOutcome = forbidden.includes(rawOutcome.toLowerCase()) ? "" : rawOutcome;
 
-      formData.append('fairness_threshold', safeThreshold);
-      formData.append('protected_columns', protectedCols);
-      formData.append('outcome_column', outcomeCol);
+      formData.append('outcome_column', safeOutcome);
       formData.append('org_name', "BiasAuditor Analysis");
+      formData.append('fairness_threshold', safeThreshold);
 
-      const response = await fetch(`http://127.0.0.1:8080/report/pdf`, {
+      console.log("📄 Requesting PDF with:", { safeOutcome, safeThreshold });
+
+      const response = await fetch(`${API_BASE_URL}/report/pdf`, {
         method: 'POST',
         body: formData,
       });
@@ -53,6 +55,7 @@ export const AuditResults: React.FC<Props> = ({ data, onReset, originalFile, thr
         throw new Error(errorData.detail || 'PDF generation failed');
       }
 
+      // Handle the PDF Blob response
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -64,6 +67,7 @@ export const AuditResults: React.FC<Props> = ({ data, onReset, originalFile, thr
       document.body.appendChild(link);
       link.click();
 
+      // Cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
@@ -74,17 +78,17 @@ export const AuditResults: React.FC<Props> = ({ data, onReset, originalFile, thr
 
   return (
     <div className="results-area">
+      {/* Banner shows the high-level risk score and row count */}
       <RiskBanner risk={data.overall_risk} meta={data.metadata} />
 
-      {/* Logic Check: If the slider threshold is different from the data's threshold, show a warning */}
-      {/* (Optional: ensures user knows the PDF will use the CURRENT slider position) */}
-
       <div className="char-grid">
-        {data.audits.map((audit: AuditResult, i: number) => (
+        {/* Map through each characteristic audit (Gender, Race, etc.) */}
+        {(data.audits || []).map((audit: AuditResult, i: number) => (
           <AuditCard key={i} audit={audit} index={i} />
         ))}
       </div>
 
+      {/* Render mitigations if the backend provided any */}
       {data.mitigations && data.mitigations.length > 0 && (
         <div className="mitigation-container">
           <h3 className="mitigation-title">🛠 Recommended Mitigations</h3>
@@ -105,7 +109,9 @@ export const AuditResults: React.FC<Props> = ({ data, onReset, originalFile, thr
       )}
 
       <div className="results-footer">
-        <button className="btn-secondary" onClick={onReset}>↩ New Audit</button>
+        <button className="btn-secondary" onClick={onReset}>
+          ↩ New Audit
+        </button>
         <button className="btn-primary" onClick={handleDownloadPDF}>
           Download PDF Report
         </button>

@@ -1,8 +1,7 @@
 import io
-from datetime import datetime, timezone
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle)
 from reportlab.graphics.shapes import Drawing
@@ -10,12 +9,20 @@ from reportlab.graphics.charts.barcharts import VerticalBarChart
 
 
 def create_bar_chart(groups):
+    # Ensure groups is a list and not empty
+    if not groups:
+        return Spacer(1, 10)
+
     drawing = Drawing(400, 160)
     bc = VerticalBarChart()
     bc.x, bc.y, bc.height, bc.width = 50, 40, 100, 300
-    bc.data = [tuple(g['rate'] for g in groups)]
+
+    # Safely extract rates, defaulting to 0 if missing
+    rates = [float(g.get('rate', 0)) for g in groups]
+    bc.data = [tuple(rates)]
+
     bc.valueAxis.valueMin, bc.valueAxis.valueMax = 0, 100
-    bc.categoryAxis.categoryNames = [g['group'] for g in groups]
+    bc.categoryAxis.categoryNames = [str(g.get('group', 'Unknown')) for g in groups]
     bc.bars[0].fillColor = colors.HexColor("#3b82f6")
     drawing.add(bc)
     return drawing
@@ -27,33 +34,71 @@ def generate_pdf_content(result: dict, org_name: str, threshold: float) -> bytes
     styles = getSampleStyleSheet()
     story = []
 
-    RED, ORANGE, GREEN = colors.HexColor("#ef4444"), colors.HexColor("#f59e0b"), colors.HexColor("#22c55e")
+    # Colors
+    RED = colors.HexColor("#ef4444")
+    ORANGE = colors.HexColor("#f59e0b")
+    GREEN = colors.HexColor("#22c55e")
 
+    # Safe access to overall_risk
     risk = result.get("overall_risk", {})
-    risk_level = str(risk.get("level", "N/A")).upper()
-    risk_color = GREEN if "LOW" in risk_level else (ORANGE if "MODERATE" in risk_level else RED)
+    risk_level = str(risk.get("level", "UNKNOWN")).upper()
 
+    risk_color = GREEN
+    if "HIGH" in risk_level or "CRITICAL" in risk_level:
+        risk_color = RED
+    elif "MODERATE" in risk_level:
+        risk_color = ORANGE
+
+    # Header
     story.append(Paragraph("⚖ ALGORITHMIC BIAS AUDIT REPORT", styles["Title"]))
     story.append(HRFlowable(width="100%", thickness=1.5, color=colors.black, spaceAfter=10))
 
+    # Meta Table
+    try:
+        display_threshold = f"{int(float(threshold) * 100)}%"
+    except:
+        display_threshold = "80%"
+
     meta_data = [
-        ["Organisation:", org_name],
-        ["Fairness Threshold:", f"{int(float(threshold) * 100)}%"],
+        ["Organisation:", str(org_name)],
+        ["Fairness Threshold:", display_threshold],
         ["Risk Status:", Paragraph(f"<font color='{risk_color}'><b>{risk_level}</b></font>", styles["Normal"])]
     ]
     t = Table(meta_data, colWidths=[60 * mm, 110 * mm])
-    t.setStyle(
-        TableStyle([('GRID', (0, 0), (-1, -1), 0.5, colors.grey), ('BACKGROUND', (0, 0), (0, -1), colors.whitesmoke)]))
+    t.setStyle(TableStyle([
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BACKGROUND', (0, 0), (0, -1), colors.whitesmoke),
+        ('PADDING', (0, 0), (-1, -1), 6)
+    ]))
     story.append(t)
 
-    for audit in result.get("audits", []):
-        is_flagged = audit['disparity']['flag']
+    # Audits Loop
+    audits = result.get("audits", [])
+    if not audits:
+        story.append(Spacer(1, 20))
+        story.append(Paragraph("No audit data available for this report.", styles["Normal"]))
+
+    for audit in audits:
+        # DEFENSIVE ACCESS: This was likely the 'None' source
+        disparity = audit.get('disparity', {})
+        is_flagged = disparity.get('flag', False)
+        char_name = audit.get('characteristic', 'Unknown Attribute')
+
         story.append(Spacer(1, 15))
-        story.append(Paragraph(f"<b>Attribute: {audit['characteristic']}</b>", styles["Heading3"]))
+        story.append(Paragraph(f"<b>Attribute: {char_name}</b>", styles["Heading3"]))
+
+        status_text = "FLAGGED" if is_flagged else "PASS"
+        status_color = RED if is_flagged else GREEN
         story.append(Paragraph(
-            f"Status: <font color='{RED if is_flagged else GREEN}'>{'FLAGGED' if is_flagged else 'PASS'}</font>",
+            f"Status: <font color='{status_color}'><b>{status_text}</b></font>",
             styles["Normal"]))
-        story.append(create_bar_chart(audit['groups']))
+
+        # Add Chart
+        try:
+            chart = create_bar_chart(audit.get('groups', []))
+            story.append(chart)
+        except Exception as e:
+            story.append(Paragraph(f"[Chart Generation Error: {str(e)}]", styles["Italic"]))
 
     doc.build(story)
     return buf.getvalue()

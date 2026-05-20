@@ -1,93 +1,96 @@
-import {useState} from "react";
-import {AuditResponse} from "../types";
-import {Hero} from "../components/Hero";
+import React, { useState } from "react";
+import { AuditResponse } from "../types";
+import { Hero } from "../components/Hero";
 import { AuditConfig } from "../components/Audit/AuditConfig";
 import { AuditResults } from "../components/Audit/AuditResults";
-import { MetricsReference } from "../components/MetricsReference";
 
 export const BiasAuditor: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<AuditResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [lastThreshold, setLastThreshold] = useState(0.8);
 
-  const API_BASE_URL = "http://127.0.0.1:8080";
+  // Set to the port that successfully responded to Invoke-RestMethod
+  const API_BASE_URL = "http://127.0.0.1:9999";
 
   const runAudit = async (file: File, threshold: number, outcomeCol: string) => {
     setLoading(true);
     setError(null);
-    setCurrentFile(file); // SAVE THE FILE HERE
+    setResults(null);
+    setCurrentFile(file);
+    setLastThreshold(threshold);
+
+    console.log(`🚀 Dispatching Request to ${API_BASE_URL}`, { threshold });
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('fairness_threshold', (threshold / 100).toString());
+    formData.append('fairness_threshold', threshold.toString());
+    formData.append('protected_columns', JSON.stringify([]));
 
-    if (outcomeCol.trim()) {
+    if (outcomeCol && outcomeCol.trim() !== "") {
       formData.append('outcome_column', outcomeCol.trim());
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/audit`, {
+      const response = await fetch(`${API_BASE_URL}/audit`, {
         method: 'POST',
         body: formData,
       });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.detail || "The audit failed to process.");
+      if (!response.ok) {
+        const errorDetail = await response.json().catch(() => ({ detail: "Analysis failed." }));
+        throw new Error(errorDetail.detail || `Error ${response.status}`);
       }
 
-      const data: AuditResponse = await res.json();
+      const data: AuditResponse = await response.json();
+      console.log("✅ Analysis complete, loading results UI");
       setResults(data);
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err: any) {
-      setError(err.message || "Connection failed.");
+      console.error("❌ Connection failed:", err);
+      setError(err.message || `Cannot connect to server on port 9999.`);
     } finally {
       setLoading(false);
     }
   };
 
-  const resetAudit = () => {
+  const handleReset = () => {
     setResults(null);
     setError(null);
-    setCurrentFile(null); // Clear file on reset
+    setCurrentFile(null);
   };
 
   return (
     <main className="fade-in">
       {!results && <Hero />}
-
-      <section className="upload-section card-section" id="audit">
-        <div className="section-header">
-          <h2>{results ? "Audit Analysis" : "Configure Audit"}</h2>
-          {results && (
-            <span className="timestamp">
-              Generated: {new Date(results.metadata.timestamp).toLocaleString()}
-            </span>
-          )}
-        </div>
-
+      <section className="card-section" id="audit-container">
         {error && (
           <div className="error-banner">
-            <p>{error}</p>
-            <button onClick={() => setError(null)}>×</button>
+            <p><strong>System Error:</strong> {error}</p>
+            <button onClick={() => setError(null)} className="close-error">×</button>
           </div>
         )}
 
         {results ? (
-          /* PASS THE FILE TO RESULTS */
           <AuditResults
             data={results}
-            onReset={resetAudit}
+            onReset={handleReset}
             originalFile={currentFile}
+            threshold={lastThreshold}
           />
         ) : (
           <AuditConfig onRun={runAudit} loading={loading} />
         )}
       </section>
 
-      {!results && !loading && <MetricsReference />}
+      {loading && (
+        <div className="loading-overlay">
+          <div className="spinner"></div>
+          <p>Processing Dataset & Auditing Bias...</p>
+        </div>
+      )}
     </main>
   );
 };
