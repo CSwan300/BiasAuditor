@@ -762,3 +762,127 @@ main {
   background: #2b6cb0;
   transform: translateY(-1px);
 }
+.mitigationSection {
+  margin-top: 40px;
+  padding: 24px;
+  background-color: #0f172a;
+  border-radius: 12px;
+  border: 1px solid #1e293b;
+  text-align: left;
+}
+
+.sectionTitle {
+  color: #f8fafc;
+  margin: 0;
+}
+
+.mitigationGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.card {
+  padding: 20px;
+  background-color: #020617;
+  border-radius: 10px;
+  border: 1px solid #334155;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cardTitle {
+  color: #60a5fa;
+  margin: 0;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.high {
+  background-color: #7f1d1d;
+  color: #fecaca;
+}
+
+.medium {
+  background-color: #78350f;
+  color: #fef3c7;
+}
+
+.low {
+  background-color: #334155;
+  color: #e2e8f0;
+}
+
+.cardText {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+.char-card.flagged {
+    border: 1px solid rgba(255, 68, 68, 0.4);
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.1);
+}
+
+.flag-badge.flagged {
+    background: #ff4444;
+    color: white;
+}
+
+.stat-value.bad {
+    color: #ff4444;
+    text-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
+}
+/* base drop zone */
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  height: 120px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px dashed #475569;
+  background-color: #0f172a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #94a3b8;
+}
+
+/* active (file selected) */
+.drop-zone.active {
+  border-color: #60a5fa;
+  background-color: #0f172a;
+  color: #60a5fa;
+}
+
+/* lit up when dragging over */
+.drop-zone.drag-over {
+  border-color: #fbbf24;
+  background-color: #1f2937;
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.25);
+  color: #fbbf24;
+}
+
+/* icon and text inside */
+.drop-zone .drop-icon {
+  font-size: 24px;
+}
+
+.drop-zone p {
+  font-size: 0.9rem;
+  margin: 0;
+  white-space: nowrap;
+}

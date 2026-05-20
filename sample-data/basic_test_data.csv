@@ -1,17 +1,13 @@
-age,gender,ethnicity,income,prediction
-22,Male,Hispanic,45000,0
-34,Female,Caucasian,72000,1
-45,Non-binary,Asian,85000,1
-19,Male,African American,31000,0
-62,Female,Caucasian,95000,1
-28,Male,Hispanic,52000,0
-40,Female,Asian,110000,1
-55,Male,Caucasian,64000,1
-25,Female,African American,42000,0
-31,Non-binary,Hispanic,58000,0
-50,Female,Caucasian,120000,1
-21,Male,Asian,39000,0
-38,Female,Hispanic,67000,1
-47,Male,African American,54000,0
-29,Female,Caucasian,88000,1
-29,Female,White,88000,0
+age,gender,ethnicity,education,prediction
+45-59,Male,White,PhD,1
+45-59,Male,White,PhD,1
+45-59,Male,White,PhD,1
+45-59,Male,White,PhD,1
+18-29,Female,Black,High School,0
+18-29,Female,Black,High School,0
+18-29,Female,Black,High School,0
+18-29,Female,Black,High School,0
+30-44,Non-binary,Asian,Bachelor,0
+30-44,Non-binary,Asian,Bachelor,0
+60-74,Female,Hispanic,Master,0
+60-74,Female,Hispanic,Master,0

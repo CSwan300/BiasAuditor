@@ -5,6 +5,13 @@ export interface GroupData {
   percentage: string;
 }
 
+export interface Mitigation {
+  type: string;
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+}
+
 export interface AuditResult {
   characteristic: string;
   groups: GroupData[];
@@ -33,4 +40,5 @@ export interface AuditResponse {
   };
   warnings: string[];
   audits: AuditResult[];
+  mitigations: Mitigation[];
 }

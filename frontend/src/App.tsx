@@ -1,6 +1,6 @@
 import React from 'react';
-import { Header } from "./components/Misc/Header"; // Path updated
-import { Footer } from "./components/Misc/Footer"; // Path updated
+import { Header } from "./components/Misc/Header";
+import { Footer } from "./components/Misc/Footer";
 import { BiasAuditor } from './pages/BiasAuditor';
 
 export const App: React.FC = () => {

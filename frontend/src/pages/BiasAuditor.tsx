@@ -9,7 +9,6 @@ export const BiasAuditor: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<AuditResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // NEW: State to hold the actual file object for the PDF export
   const [currentFile, setCurrentFile] = useState<File | null>(null);
 
   const API_BASE_URL = "http://127.0.0.1:8080";
