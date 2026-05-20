@@ -24,6 +24,7 @@ export interface AuditResponse {
     flagged_characteristics: string[];
   };
   metadata: {
+    timestamp: string | number | Date;
     total_rows: number;
     total_columns: number;
     prediction_column: string;

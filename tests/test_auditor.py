@@ -5,7 +5,7 @@ import io
 import json
 from fastapi.testclient import TestClient
 
-from backend.auditor import BiasAuditor
+from backend.modules.auditor import BiasAuditor
 from backend.main import app
 
 client = TestClient(app)

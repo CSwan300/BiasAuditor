@@ -1,6 +1,6 @@
 // @ts-ignore
 import React, { useEffect, useState } from 'react';
-import { AuditResult } from '../types';
+import { AuditResult } from '../../types';
 
 interface Props {
   audit: AuditResult;

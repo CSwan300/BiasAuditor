@@ -1,71 +1,91 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+import logging
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-import pandas as pd
-import numpy as np
-import io
-import json
-from pathlib import Path
+from fastapi.concurrency import run_in_threadpool  # Essential for unblocking
+from typing import Optional
 
-from .auditor import BiasAuditor
+from backend.modules.services import load_dataframe, parse_list
+from backend.modules.reporting import build_pdf_response
+from backend.modules.auditor import BiasAuditor
 
-app = FastAPI(title="Bias Auditor API", version="1.0.0")
+# Setup basic logging to help you see what's happening in the terminal
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="BiasAuditor API", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True, # Added this
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-PROTECTED_CHARACTERISTICS = ["age", "gender", "ethnicity", "race", "sex"]
-
-
 @app.get("/health")
-def health_check():
+def health():
     return {"status": "ok"}
 
 
 @app.post("/audit")
-async def audit_dataset(file: UploadFile = File(...)):
-    if not file.filename.endswith((".csv", ".xlsx", ".xls")):
-        raise HTTPException(
-            status_code=400,
-            detail="Only CSV and Excel files are supported."
+async def audit(
+        file: UploadFile = File(...),
+        protected_columns: Optional[str] = Form(None),
+        outcome_column: Optional[str] = Form(None),
+        fairness_threshold: float = Form(0.80),
+):
+    # High-visibility print for debugging
+    print("\n" + "=" * 50)
+    print(f"🚀 API HIT: /audit | File: {file.filename}")
+    print("=" * 50 + "\n")
+
+    try:
+        logger.info(f"Received audit request for file: {file.filename}")
+
+        # 1. Load Data
+        df = await run_in_threadpool(load_dataframe, file)
+        print(f"✅ Data loaded successfully. Rows: {len(df)}")
+
+        # 2. Init Auditor
+        auditor = BiasAuditor(df, fairness_threshold=fairness_threshold)
+
+        # 3. Run Audit
+        logger.info("Starting heavy audit calculation...")
+        print("⏳ Running full_audit logic...")
+
+        result = await run_in_threadpool(
+            auditor.full_audit,
+            protected_cols=parse_list(protected_columns),
+            outcome_col=outcome_column.strip() if outcome_column else None,
         )
 
-    content = await file.read()
-    try:
-        if file.filename.endswith(".csv"):
-            df = pd.read_csv(io.BytesIO(content))
-        else:
-            df = pd.read_excel(io.BytesIO(content))
+        print("✨ Audit finished successfully!")
+        logger.info("Audit complete. Sending results.")
+        return result
+
     except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Could not parse file: {str(e)}")
+        print(f"❌ ERROR IN /AUDIT: {str(e)}")
+        logger.error(f"Audit failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+@app.post("/report/pdf")
+async def generate_pdf_report(
+        file: UploadFile = File(...),
+        protected_columns: Optional[str] = Form(None),
+        outcome_column: Optional[str] = Form(None),
+        fairness_threshold: float = Form(0.80),
+        org_name: str = Form("Your Organisation"),
+):
+    try:
+        df = await run_in_threadpool(load_dataframe, file)
+        auditor = BiasAuditor(df, fairness_threshold=fairness_threshold)
 
-    if df.empty:
-        raise HTTPException(status_code=422, detail="Uploaded file is empty.")
+        result = await run_in_threadpool(
+            auditor.full_audit,
+            protected_cols=parse_list(protected_columns),
+            outcome_col=outcome_column.strip() if outcome_column else None
+        )
 
-    auditor = BiasAuditor(df)
-    result = auditor.run_audit()
-    return result
-
-
-@app.get("/sample-schema")
-def sample_schema():
-    """Return info about expected dataset format."""
-    return {
-        "description": "Upload a CSV or Excel file with columns for protected characteristics and a prediction/outcome column.",
-        "expected_columns": {
-            "protected": "age, gender, ethnicity (or any subset)",
-            "prediction": "A column named 'prediction', 'label', 'outcome', or 'result'",
-            "optional": "Any additional feature columns"
-        },
-        "example_row": {
-            "age": 34,
-            "gender": "Female",
-            "ethnicity": "Hispanic",
-            "prediction": 1
-        }
-    }
+        return build_pdf_response(result, org_name, fairness_threshold)
+    except Exception as e:
+        logger.error(f"PDF Generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
