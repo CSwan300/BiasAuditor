@@ -1,13 +1,20 @@
-from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Response
+import io
+import json
+import traceback
+import pandas as pd
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 from typing import Optional
-from backend.modules.services import load_dataframe, parse_list
-from backend.modules.reporting import build_pdf_response
+
+# Internal module imports - ensure these files exist in /backend/modules/
 from backend.modules.auditor import BiasAuditor
+from backend.modules.reporting import build_pdf_response
 
 app = FastAPI(title="BiasAuditor API", version="2.0.0")
 
+# --- WIDE OPEN CORS FOR LOCAL DEV ---
+# If this still hangs, replace ["*"] with your frontend URL like ["http://localhost:5173"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,41 +24,55 @@ app.add_middleware(
 )
 
 
+@app.get("/health")
+def health():
+    """Simple health check to verify the server is listening."""
+    print("Health check pinged")
+    return {"status": "ok", "version": "2.0.0"}
+
+
 @app.post("/audit")
 async def audit(
         file: UploadFile = File(...),
         protected_columns: Optional[str] = Form(None),
         outcome_column: Optional[str] = Form(None),
-        fairness_threshold: str = Form("0.80"),  # Receive as string to prevent parse errors
+        fairness_threshold: str = Form("0.80"),
 ):
+    print(f"--- [AUDIT START] Received file: {file.filename} ---")
     try:
-        # 1. Load Data
-        df = await run_in_threadpool(load_dataframe, file)
+        # 1. Read bytes immediately to clear the browser buffer
+        content = await file.read()
+        print(f"File size read: {len(content)} bytes")
 
-        # 2. Safe Threshold Parsing
-        try:
-            f_threshold = float(fairness_threshold)
-        except (ValueError, TypeError):
-            f_threshold = 0.80
+        # 2. Run the heavy processing in a threadpool so the main loop stays alive
+        async def process():
+            df = pd.read_csv(io.BytesIO(content))
 
-        # 3. Safe List Parsing
-        p_cols = parse_list(protected_columns) if protected_columns else None
+            # Clean inputs
+            raw_t = str(fairness_threshold).replace('%', '').strip()
+            f_threshold = float(raw_t) / 100 if float(raw_t) > 1 else float(raw_t)
 
-        # 4. Safe String Trimming
-        o_col = outcome_column.strip() if (outcome_column and outcome_column.strip()) else None
+            p_cols = []
+            if protected_columns and protected_columns not in ["null", "undefined", "[]", ""]:
+                try:
+                    p_cols = json.loads(protected_columns)
+                except:
+                    # Handle comma-separated fallback
+                    p_cols = [c.strip() for c in protected_columns.split(",")]
 
-        auditor = BiasAuditor(df, fairness_threshold=f_threshold)
+            o_col = outcome_column.strip() if (
+                        outcome_column and outcome_column.strip() not in ["", "null", "undefined"]) else None
 
-        result = await run_in_threadpool(
-            auditor.full_audit,
-            protected_cols=p_cols,
-            outcome_col=o_col
-        )
+            auditor = BiasAuditor(df, fairness_threshold=f_threshold)
+            return auditor.full_audit(p_cols, o_col)
+
+        result = await run_in_threadpool(process)
+        print("--- [AUDIT COMPLETE] Result generated ---")
         return result
 
     except Exception as e:
-        print(f"AUDIT ERROR: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Audit failed: {str(e)}")
+        print(f"!!! AUDIT CRASH !!!\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/report/pdf")
@@ -60,32 +81,38 @@ async def generate_pdf_report(
         protected_columns: Optional[str] = Form(None),
         outcome_column: Optional[str] = Form(None),
         fairness_threshold: str = Form("0.80"),
-        org_name: str = Form("Your Organisation"),
+        org_name: str = Form("BiasAuditor Analysis"),
 ):
+    print(f"--- [PDF START] Generating for: {org_name} ---")
     try:
-        df = await run_in_threadpool(load_dataframe, file)
+        content = await file.read()
 
-        # Consistent Parsing
-        try:
-            f_threshold = float(fairness_threshold)
-        except:
-            f_threshold = 0.80
+        async def process_pdf():
+            df = pd.read_csv(io.BytesIO(content))
 
-        p_cols = parse_list(protected_columns) if protected_columns else None
-        o_col = outcome_column.strip() if (outcome_column and outcome_column.strip()) else None
+            raw_t = str(fairness_threshold).replace('%', '').strip()
+            f_threshold = float(raw_t) / 100 if float(raw_t) > 1 else float(raw_t)
 
-        auditor = BiasAuditor(df, fairness_threshold=f_threshold)
+            p_cols = []
+            if protected_columns and protected_columns not in ["null", "undefined", "[]", ""]:
+                try:
+                    p_cols = json.loads(protected_columns)
+                except:
+                    p_cols = [c.strip() for c in protected_columns.split(",")]
 
-        result = await run_in_threadpool(
-            auditor.full_audit,
-            protected_cols=p_cols,
-            outcome_col=o_col
-        )
+            o_col = outcome_column.strip() if (
+                        outcome_column and outcome_column.strip() not in ["", "null", "undefined"]) else None
 
-        # CRITICAL FIX: Ensure threshold is passed to the PDF builder
-        # so the report actually shows the fucking slider value
-        return build_pdf_response(result, org_name, threshold=f_threshold)
+            auditor = BiasAuditor(df, fairness_threshold=f_threshold)
+            result = auditor.full_audit(p_cols, o_col)
+
+            return build_pdf_response(result, org_name, threshold=f_threshold)
+
+        return await run_in_threadpool(process_pdf)
 
     except Exception as e:
-        print(f"PDF GENERATION ERROR: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"PDF Error: {str(e)}")
+        print(f"!!! PDF CRASH !!!\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+    #

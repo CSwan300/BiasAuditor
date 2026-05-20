@@ -7,9 +7,10 @@ services:
     container_name: bias-auditor-api
     restart: unless-stopped
     ports:
-      - "8000:8000" # Maps container port 8000 to your host port 8000
+      - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
     networks:
       - bias-net
 
@@ -21,7 +22,7 @@ services:
     container_name: bias-auditor-ui
     restart: unless-stopped
     ports:
-      - "8080:80"   # Access the UI via http://localhost:8080
+      - "8080:80"
     depends_on:
       - backend
     networks:
