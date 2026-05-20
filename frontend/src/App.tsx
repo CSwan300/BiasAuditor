@@ -6,7 +6,7 @@ function App() {
   return (
     <div className="app-container">
       <Header />
-      {/* In the future, for a Router,
+       {/* In the future, for a Router,
           the <Routes> would go here instead of <LandingPage />
       */}
       <LandingPage />
