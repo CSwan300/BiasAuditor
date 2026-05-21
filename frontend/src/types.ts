@@ -1,3 +1,4 @@
+// Type setting
 export interface GroupData {
   group: string;
   rate: number;
