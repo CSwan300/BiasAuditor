@@ -48,6 +48,7 @@ class TestLoadDataframe:
         assert list(result.columns) == ["a", "b"]
         assert len(result) == 2
 
+    @pytest.mark.skipif(not __import__("importlib").util.find_spec("openpyxl"), reason="openpyxl not installed")
     def test_xlsx_loads(self):
         buf = io.BytesIO()
         pd.DataFrame({"x": [1], "y": [2]}).to_excel(buf, index=False)
@@ -56,6 +57,7 @@ class TestLoadDataframe:
         result = load_dataframe(upload)
         assert list(result.columns) == ["x", "y"]
 
+    @pytest.mark.skipif(not __import__("importlib").util.find_spec("openpyxl"), reason="openpyxl not installed")
     def test_xls_extension_accepted(self):
         buf = io.BytesIO()
         pd.DataFrame({"x": [1]}).to_excel(buf, index=False)
