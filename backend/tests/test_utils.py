@@ -59,7 +59,7 @@ class TestStatSignificance:
 
     def test_significant_disparity_is_conclusive(self, large_df):
         result = stat_significance(large_df, "gender", "Male", "Female", "hired")
-        assert result["conclusive"] == True
+        assert result["conclusive"]
 
     def test_no_significance_for_equal_rates(self):
         df = pd.DataFrame({
@@ -67,7 +67,7 @@ class TestStatSignificance:
             "hired":  [1] * 50 + [0] * 50 + [1] * 50 + [0] * 50,
         })
         result = stat_significance(df, "gender", "Male", "Female", "hired")
-        assert result["conclusive"] == False
+        assert not result["conclusive"]
 
     def test_small_sample_uses_fisher(self):
         # Source uses n_total < 20 for Fisher, so keep total to 19
@@ -84,7 +84,7 @@ class TestStatSignificance:
 
     def test_empty_subset_returns_inconclusive(self, large_df):
         result = stat_significance(large_df, "gender", "Male", "Nonbinary", "hired")
-        assert result["conclusive"] == False
+        assert not result["conclusive"]
 
     def test_p_value_between_zero_and_one(self, large_df):
         result = stat_significance(large_df, "gender", "Male", "Female", "hired")
@@ -93,7 +93,7 @@ class TestStatSignificance:
     def test_error_path_returns_safe_defaults(self):
         df = pd.DataFrame({"gender": [], "hired": []})
         result = stat_significance(df, "gender", "Male", "Female", "hired")
-        assert result["conclusive"] == False
+        assert not result["conclusive"]
 
 
 # ===========================================================================

@@ -3,7 +3,7 @@ Tests for backend/modules/AuditLogic/auditor.py
 """
 import pytest
 import pandas as pd
-from backend.modules.AuditLogic.auditor import BiasAuditor
+from backend.modules.AuditLogic.auditor import BiasAuditor  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -184,7 +184,7 @@ class TestCalculateSignificance:
         """Large balanced dataset with 40-point gap should be significant."""
         auditor = BiasAuditor(simple_df, 0.8)
         sig = auditor._calculate_significance("gender", "Male", "Female", "hired")
-        assert sig == True
+        assert sig
 
     def test_no_significance_for_equal_rates(self):
         df = pd.DataFrame({
@@ -193,18 +193,18 @@ class TestCalculateSignificance:
         })
         auditor = BiasAuditor(df, 0.8)
         sig = auditor._calculate_significance("gender", "Male", "Female", "hired")
-        assert sig == False
+        assert not sig
 
     def test_tiny_sample_returns_false(self):
         df = pd.DataFrame({"gender": ["Male", "Female"], "hired": [1, 0]})
         auditor = BiasAuditor(df, 0.8)
         sig = auditor._calculate_significance("gender", "Male", "Female", "hired")
-        assert sig == False
+        assert not sig
 
     def test_missing_group_does_not_crash(self, simple_df):
         auditor = BiasAuditor(simple_df, 0.8)
         sig = auditor._calculate_significance("gender", "Male", "Nonbinary", "hired")
-        assert sig == False
+        assert not sig
 
 
 # ---------------------------------------------------------------------------
