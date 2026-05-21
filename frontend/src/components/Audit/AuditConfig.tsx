@@ -71,7 +71,7 @@ export const AuditConfig: React.FC<Props> = ({ onRun, loading }) => {
           onDrop={handleDrop}
         >
           <div className="drop-icon" style={{ pointerEvents: 'none' }}>
-            {file ? '✅' : '📂'}
+            {/* Visual indicators removed per request */}
           </div>
           <p style={{ pointerEvents: 'none' }}>
             {file ? file.name : 'Drop dataset here or browse'}
@@ -117,7 +117,7 @@ export const AuditConfig: React.FC<Props> = ({ onRun, loading }) => {
           onClick={() => file && onRun(file, threshold / 100, outcomeCol)}
           disabled={!file || loading}
         >
-          {loading ? 'Analyzing...' : '▶ Run Audit'}
+          {loading ? 'Analyzing...' : 'Run Audit'}
         </button>
       </div>
     </div>

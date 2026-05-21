@@ -1,34 +1,68 @@
-import React, { useState } from "react";
+import React, { useReducer } from "react";
 import { AuditResponse } from "../types";
 import { Hero } from "../components/Hero";
 import { AuditConfig } from "../components/Audit/AuditConfig";
 import { AuditResults } from "../components/Audit/AuditResults";
 
-export const BiasAuditor: React.FC = () => {
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<AuditResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [currentFile, setCurrentFile] = useState<File | null>(null);
-  const [lastThreshold, setLastThreshold] = useState(0.8);
+// 1. Define a clear state structure
+interface AuditState {
+  loading: boolean;
+  results: AuditResponse | null;
+  error: string | null;
+  currentFile: File | null;
+  lastThreshold: number;
+}
 
-  // Set to the port that successfully responded to Invoke-RestMethod
-  const API_BASE_URL = "http://127.0.0.1:9999";
+type AuditAction =
+  | { type: 'START_AUDIT'; file: File; threshold: number }
+  | { type: 'AUDIT_SUCCESS'; payload: AuditResponse }
+  | { type: 'AUDIT_FAILURE'; error: string }
+  | { type: 'RESET' }
+  | { type: 'CLEAR_ERROR' };
+
+const initialState: AuditState = {
+  loading: false,
+  results: null,
+  error: null,
+  currentFile: null,
+  lastThreshold: 0.8,
+};
+
+function auditReducer(state: AuditState, action: AuditAction): AuditState {
+  switch (action.type) {
+    case 'START_AUDIT':
+      return { ...state, loading: true, error: null, results: null, currentFile: action.file, lastThreshold: action.threshold };
+    case 'AUDIT_SUCCESS':
+      return { ...state, loading: false, results: action.payload };
+    case 'AUDIT_FAILURE':
+      return { ...state, loading: false, error: action.error };
+    case 'RESET':
+      return { ...initialState };
+    case 'CLEAR_ERROR':
+      return { ...state, error: null };
+    default:
+      return state;
+  }
+}
+
+export const BiasAuditor: React.FC = () => {
+  const [state, dispatch] = useReducer(auditReducer, initialState);
+  const { loading, results, error, currentFile, lastThreshold } = state;
+
+  // Use environment variables for the FastAPI URL
+  // i cant be bothered to set it up atm but you would if it was to be launced in prod
+
+  const API_BASE_URL =  "http://127.0.0.1:9999";
 
   const runAudit = async (file: File, threshold: number, outcomeCol: string) => {
-    setLoading(true);
-    setError(null);
-    setResults(null);
-    setCurrentFile(file);
-    setLastThreshold(threshold);
-
-    console.log(`🚀 Dispatching Request to ${API_BASE_URL}`, { threshold });
+    dispatch({ type: 'START_AUDIT', file, threshold });
 
     const formData = new FormData();
     formData.append('file', file);
     formData.append('fairness_threshold', threshold.toString());
     formData.append('protected_columns', JSON.stringify([]));
 
-    if (outcomeCol && outcomeCol.trim() !== "") {
+    if (outcomeCol?.trim()) {
       formData.append('outcome_column', outcomeCol.trim());
     }
 
@@ -40,43 +74,41 @@ export const BiasAuditor: React.FC = () => {
 
       if (!response.ok) {
         const errorDetail = await response.json().catch(() => ({ detail: "Analysis failed." }));
-        throw new Error(errorDetail.detail || `Error ${response.status}`);
+        throw new Error(errorDetail.detail || `Server Error: ${response.status}`);
       }
 
       const data: AuditResponse = await response.json();
-      console.log("✅ Analysis complete, loading results UI");
-      setResults(data);
+      dispatch({ type: 'AUDIT_SUCCESS', payload: data });
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    } catch (err: any) {
-      console.error("❌ Connection failed:", err);
-      setError(err.message || `Cannot connect to server on port 9999.`);
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      dispatch({ type: 'AUDIT_FAILURE', error: message });
     }
-  };
-
-  const handleReset = () => {
-    setResults(null);
-    setError(null);
-    setCurrentFile(null);
   };
 
   return (
     <main className="fade-in">
       {!results && <Hero />}
+
       <section className="card-section" id="audit-container">
         {error && (
-          <div className="error-banner">
+          <div className="error-banner" role="alert">
             <p><strong>System Error:</strong> {error}</p>
-            <button onClick={() => setError(null)} className="close-error">×</button>
+            <button
+              onClick={() => dispatch({ type: 'CLEAR_ERROR' })}
+              className="close-error"
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
           </div>
         )}
 
         {results ? (
           <AuditResults
             data={results}
-            onReset={handleReset}
+            onReset={() => dispatch({ type: 'RESET' })}
             originalFile={currentFile}
             threshold={lastThreshold}
           />
@@ -86,7 +118,7 @@ export const BiasAuditor: React.FC = () => {
       </section>
 
       {loading && (
-        <div className="loading-overlay">
+        <div className="loading-overlay" aria-busy="true">
           <div className="spinner"></div>
           <p>Processing Dataset & Auditing Bias...</p>
         </div>

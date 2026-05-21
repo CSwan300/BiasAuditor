@@ -14,7 +14,6 @@ const AuditCard: React.FC<Props> = ({ audit, index }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Safety fallback for missing disparity data
   const disparity = audit.disparity || {
     flag: false,
     disparate_impact_ratio: 0,
@@ -30,7 +29,7 @@ const AuditCard: React.FC<Props> = ({ audit, index }) => {
       <div className="card-header">
         <span className="char-name">{audit.characteristic}</span>
         <span className={`flag-badge ${disparity.flag ? 'flagged' : 'ok'}`}>
-          {disparity.flag ? '⚑ Flagged' : '✓ OK'}
+          {disparity.flag ? 'Flagged' : 'OK'}
         </span>
       </div>
 

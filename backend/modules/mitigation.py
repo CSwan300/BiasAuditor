@@ -1,12 +1,10 @@
 from backend.config import MIN_GROUP_SIZE
 
-
 def suggest_mitigation(group_stats: dict, passes: bool, threshold: float) -> list[dict]:
     if passes:
         return [{"type": "none", "message": "No mitigation required."}]
 
     suggestions = []
-    # Filter groups by minimum size per config
     rates = {g: s["selection_rate"] for g, s in group_stats.items() if s.get("total", 0) >= MIN_GROUP_SIZE}
 
     if not rates:

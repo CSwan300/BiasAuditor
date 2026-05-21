@@ -1,19 +1,15 @@
 import pandas as pd
 
-
 def compute_rates(group_df: pd.DataFrame, outcome_col: str) -> dict:
     total = len(group_df)
     if total == 0:
         return {"total": 0, "selection_rate": 0}
 
-    # Ensure outcome is numeric for the mean calculation
-    # We convert to numeric, turning errors to NaN, then fill with 0
     series = pd.to_numeric(group_df[outcome_col], errors='coerce').fillna(0)
     pos_rate = series.mean()
 
     result = {"total": total, "selection_rate": round(float(pos_rate), 4)}
 
-    # Confusion Matrix logic (only if 'actual' column exists)
     if "actual" in group_df.columns:
         actual = pd.to_numeric(group_df["actual"], errors='coerce').fillna(0)
         predicted = series

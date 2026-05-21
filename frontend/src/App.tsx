@@ -7,11 +7,9 @@ export const App: React.FC = () => {
   return (
     <div className="platform-container">
       <Header />
-
       <div className="content-wrapper">
         <BiasAuditor />
       </div>
-
       <Footer />
     </div>
   );

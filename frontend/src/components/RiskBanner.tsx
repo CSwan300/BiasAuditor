@@ -1,22 +1,16 @@
 import React from 'react';
-import { AuditResponse } from '../types';
 
 interface Props {
-  // Use 'any' temporarily or update your AuditResponse type to match the backend
   risk: any;
   meta: any;
 }
 
 const RiskBanner: React.FC<Props> = ({ risk, meta }) => {
-  // 1. Defensive Extraction: Check if risk is an object or a string
-  // Based on your auditor.py, 'risk' is likely the string "High" or "Low"
   const riskLabel = typeof risk === 'object' ? risk?.level : risk;
   const riskScore = typeof risk === 'object' ? risk?.score : (riskLabel === 'High' ? 100 : 0);
 
-  // 2. Safe Lowercase: This prevents the 'undefined' crash
   const level = riskLabel?.toLowerCase() || 'low';
 
-  // 3. Metadata fallbacks
   const rowCount = meta?.total_rows || meta?.rows || 0;
   const targetCol = meta?.prediction_column || meta?.outcome_column || 'N/A';
 

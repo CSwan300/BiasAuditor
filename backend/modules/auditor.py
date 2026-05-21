@@ -25,15 +25,18 @@ class BiasAuditor:
             subset[outcome_col] = pd.to_numeric(subset[outcome_col], errors='coerce').fillna(0).astype(int)
             ct = pd.crosstab(subset[group_col], subset[outcome_col])
             ct = ct.reindex(index=[group_a, group_b], columns=[0, 1], fill_value=0)
+
             n_total = ct.values.sum()
             if n_total < 5:
                 return False
+
             if n_total < 30:
                 _, p = fisher_exact(ct.values)
             else:
                 _, p, _, _ = chi2_contingency(ct.values)
+
             return p < 0.05
-        except Exception:  # Fixed E722
+        except Exception:
             return False
 
     def analyze_attribute(self, protected_col: str, outcome_col: str) -> Dict:
@@ -107,11 +110,13 @@ class BiasAuditor:
                 all_mitigations.extend(actionable)
 
         flagged_count = sum(1 for a in audits if a['disparity']['flag'])
-        level = "Low Risk"
+
         if flagged_count >= 3:
             level = "High Risk"
         elif flagged_count > 0:
             level = "Moderate Risk"
+        else:
+            level = "Low Risk"
 
         min_ratio = min([a['disparity']['disparate_impact_ratio'] for a in audits], default=1.0)
 
