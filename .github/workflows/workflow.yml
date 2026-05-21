@@ -84,8 +84,7 @@ jobs:
 
       - name: Build and Push
         uses: docker/bake-action@v5
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         with:
           push: true
-          set: |
-            *.cache-from=type=gha
-            *.cache-to=type=gha,mode=max
