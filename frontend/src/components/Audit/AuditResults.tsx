@@ -1,5 +1,5 @@
 import React from 'react';
-import RiskBanner from '../RiskBanner';
+import RiskBanner from '../Misc/RiskBanner';
 import AuditCard from './AuditCard';
 import { AuditResponse, AuditResult, Mitigation } from '../../types';
 

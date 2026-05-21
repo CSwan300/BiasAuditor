@@ -1,7 +1,7 @@
 import io
 from datetime import datetime
 from fastapi.responses import StreamingResponse
-from .pdf_builder import generate_pdf_content
+from backend.modules.Build_pdf.pdf_builder import generate_pdf_content
 
 def build_pdf_response(result: dict, org_name: str, threshold: float = 0.80):
     try:

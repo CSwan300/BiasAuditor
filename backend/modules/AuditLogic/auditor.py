@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List, Dict
 from scipy.stats import chi2_contingency, fisher_exact
 from backend.config import MIN_GROUP_SIZE
-from .mitigation import suggest_mitigation
+from backend.modules.Build_pdf.mitigation import suggest_mitigation
 
 
 class BiasAuditor:

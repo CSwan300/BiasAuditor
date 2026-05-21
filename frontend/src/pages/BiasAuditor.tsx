@@ -1,6 +1,6 @@
 import React, { useReducer } from "react";
 import { AuditResponse } from "../types";
-import { Hero } from "../components/Hero";
+import { Hero } from "../components/Misc/Hero";
 import { AuditConfig } from "../components/Audit/AuditConfig";
 import { AuditResults } from "../components/Audit/AuditResults";
 

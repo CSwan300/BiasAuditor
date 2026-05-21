@@ -7,8 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 
 # Internal Modules
-from backend.modules.auditor import BiasAuditor
-from backend.modules.reporting import build_pdf_response
+from backend.modules.AuditLogic.auditor import BiasAuditor
+from backend.modules.Build_pdf.reporting import build_pdf_response
 
 app = FastAPI()
 
