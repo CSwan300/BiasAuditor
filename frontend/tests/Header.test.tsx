@@ -2,7 +2,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Header } from '../src/components/Misc/Header';
 import '@testing-library/jest-dom/vitest';
-import '@testing-library/jest-dom';
 
 describe('Header', () => {
   beforeEach(() => {

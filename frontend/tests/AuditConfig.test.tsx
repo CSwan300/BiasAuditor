@@ -1,7 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuditConfig } from '../src/components/Audit/AuditConfig';
-import '@testing-library/jest-dom';
 
 describe('AuditConfig', () => {
   const onRun = vi.fn();

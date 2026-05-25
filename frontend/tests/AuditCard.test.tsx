@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import AuditCard from '../src/components/Audit/AuditCard';
-import '@testing-library/jest-dom';
 
 describe('AuditCard', () => {
   it('renders audit details and flagged state', () => {

@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "types": ["@testing-library/jest-dom", "vitest/globals"],
@@ -17,6 +17,6 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "include": ["src", "vitest.setup.ts"],
+  "include": ["src", "tests", "vitest.setup.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

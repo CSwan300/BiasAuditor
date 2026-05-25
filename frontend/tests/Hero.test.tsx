@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { Hero } from '../src/components/Misc/Hero';
 import { describe, expect, it } from 'vitest';
-import '@testing-library/jest-dom';
 
 describe('Hero', () => {
   it('renders the main heading', () => {
