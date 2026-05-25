@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const AuditResults: React.FC<Props> = ({ data, onReset, originalFile, threshold }) => {
-  const API_BASE_URL = "http://127.0.0.1:9999";
+const API_BASE_URL = "http://127.0.0.1:8000";
 
   const handleDownloadPDF = async () => {
     if (!originalFile) {

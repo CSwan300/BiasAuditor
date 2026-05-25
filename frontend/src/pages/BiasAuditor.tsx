@@ -52,7 +52,7 @@ export const BiasAuditor: React.FC = () => {
   // Use environment variables for the FastAPI URL
   // i cant be bothered to set it up atm but you would if it was to be launced in prod
 
-  const API_BASE_URL =  "http://127.0.0.1:9999";
+const API_BASE_URL = "http://127.0.0.1:8000";
 
   const runAudit = async (file: File, threshold: number, outcomeCol: string) => {
     dispatch({ type: 'START_AUDIT', file, threshold });

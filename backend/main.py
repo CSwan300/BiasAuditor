@@ -115,5 +115,5 @@ async def generate_pdf_report(
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(app, host="127.0.0.1", port=9999)
+    # Change host to 0.0.0.0 and port to 8000
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
