@@ -98,7 +98,9 @@ class BiasAuditor:
         }
 
     def full_audit(self, protected_cols: List[str] = None, outcome_col: str = None) -> Dict:
+        # Ensure we aren't auditing a timestamp or ID by default because im an idiot and left that in
         target = outcome_col if outcome_col else self.df.columns[-1]
+
         audits = []
         all_mitigations = []
 
@@ -109,22 +111,26 @@ class BiasAuditor:
                 actionable = [m for m in res["attribute_mitigations"] if m["type"] != "none"]
                 all_mitigations.extend(actionable)
 
+        # Use single words for levels to avoid "High Risk Risk" in UI
         flagged_count = sum(1 for a in audits if a['disparity']['flag'])
-
         if flagged_count >= 3:
-            level = "High Risk"
+            level = "High"
         elif flagged_count > 0:
-            level = "Moderate Risk"
+            level = "Moderate"
         else:
-            level = "Low Risk"
+            level = "Low"
 
+        # min_ratio of 0.2 (Bad) now becomes 80 (High Risk)
+        # min_ratio of 1.0 (Good) now becomes 0 (Low Risk)
         min_ratio = min([a['disparity']['disparate_impact_ratio'] for a in audits], default=1.0)
+        risk_score = int((1.0 - min_ratio) * 100)
 
         return {
             "overall_risk": {
                 "level": level,
-                "score": int(min_ratio * 100),
-                "flagged_count": flagged_count
+                "score": risk_score,
+                "flagged_count": flagged_count,
+                "flagged_characteristics": [a['characteristic'] for a in audits if a['disparity']['flag']]
             },
             "metadata": {
                 "timestamp": datetime.now().isoformat(),

@@ -1102,3 +1102,39 @@ main {
     padding: 20px 16px;
   }
 }
+.risk-score-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 240px;
+  padding-right: 24px;
+  border-right: 1px solid var(--border);
+}
+
+.risk-definition {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.risk-definition strong {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  margin-bottom: 6px;
+  letter-spacing: 0.1em;
+}
+
+[data-theme="light"] .score-explanation {
+  color: var(--text-muted);
+}
+
+/* Ensure the banner flexes nicely on mobile */
+@media (max-width: 768px) {
+  .risk-score-container {
+    border-right: none;
+    padding-right: 0;
+    margin-bottom: 20px;
+    max-width: 100%;
+  }
+}
