@@ -1,8 +1,16 @@
+// Type setting
 export interface GroupData {
   group: string;
   rate: number;
   count: number;
   percentage: string;
+}
+
+export interface Mitigation {
+  type: string;
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
 }
 
 export interface AuditResult {
@@ -24,6 +32,7 @@ export interface AuditResponse {
     flagged_characteristics: string[];
   };
   metadata: {
+    timestamp: string | number | Date;
     total_rows: number;
     total_columns: number;
     prediction_column: string;
@@ -32,4 +41,5 @@ export interface AuditResponse {
   };
   warnings: string[];
   audits: AuditResult[];
+  mitigations: Mitigation[];
 }

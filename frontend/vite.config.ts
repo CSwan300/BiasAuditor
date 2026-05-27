@@ -1,16 +1,38 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
+/**
+ * Vite Configuration
+ * Includes Vitest settings for React Testing Library and JSDOM
+ * https://vitejs.dev/config/
+ */
 export default defineConfig({
   plugins: [react()],
-  base: './', // CRITICAL: Ensures paths like /assets/ become ./assets/
+
+  // Base path for deployment (ensures relative asset paths)
+  base: './',
+
   server: {
     port: 3000,
-    host: true // Allows the server to be accessible outside the container
+    host: true // Necessary for Docker/Container access
   },
+
   build: {
-    outDir: 'dist', // Ensures the output folder matches your Dockerfile COPY command
+    outDir: 'dist',
     emptyOutDir: true,
-  }
-})
+  },
+
+  test: {
+    // Enables global functions like 'describe', 'it', and 'expect'
+    globals: true,
+
+    // Simulates a browser environment in Node.js
+    environment: 'jsdom',
+
+    setupFiles: ['./tests/vitest.setup.ts'],
+
+    include: ['tests/**/*.{test,spec}.{ts,tsx}'],
+
+    exclude: ['node_modules', 'dist'],
+  },
+});

@@ -92,5 +92,5 @@ Bias Auditor is intended for internal fairness monitoring only. While it uses st
 
 ## 👨‍💻 Author / Acknowledgements
 
-- Google Gemini — AI Collaboration & Technical Architecture
+- Google Gemini — AI Assistance (Generated thus readme and helped me debug a ghost process that kept me awake far to damn long)
 - [cswan300 — GitHub Profile](https://github.com/cswan300)

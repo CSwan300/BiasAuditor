@@ -1,19 +1,20 @@
-import Header from './components/Header';
-import Footer from './components/Footer';
-import { LandingPage } from './pages/LandingPage';
+import React from 'react';
+import { Header } from "./components/Misc/Header";
+import { Footer } from "./components/Misc/Footer";
+import { BiasAuditor } from './pages/BiasAuditor';
+import { MetricsReference } from './components/Misc/MetricsReference';
 
-function App() {
+export const App: React.FC = () => {
   return (
-    <div className="app-container">
+    <div className="platform-container">
       <Header />
-       {/* In the future, for a Router,
-          the <Routes> would go here instead of <LandingPage />
-      */}
-      <LandingPage />
+
+      <main className="content-wrapper">
+        <BiasAuditor />
+        <MetricsReference />
+      </main>
 
       <Footer />
     </div>
   );
-}
-
-export default App;
+};

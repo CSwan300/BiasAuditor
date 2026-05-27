@@ -11,7 +11,7 @@
 .github
 
 # Development/Local data (assuming these aren't needed in production)
-tests/
+backend/tests/
 sample_data/
 *.md
 
