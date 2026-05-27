@@ -26,8 +26,14 @@ describe('AuditCard', () => {
 
     expect(screen.getByText('GENDER')).toBeInTheDocument();
     expect(screen.getByText(/Flagged/i)).toBeInTheDocument();
+
+    // DIR Ratio check
     expect(screen.getByText(/0\.500/i)).toBeInTheDocument();
-    expect(screen.getByText(/40\.0%/i)).toBeInTheDocument();
+
+    // 40.0% appears twice: once in the Female group row, once in "Max Gap"
+    const percentElements = screen.getAllByText(/40\.0%/i);
+    expect(percentElements.length).toBeGreaterThanOrEqual(2);
+
     expect(screen.getByText('Male')).toBeInTheDocument();
     expect(screen.getByText('Female')).toBeInTheDocument();
   });

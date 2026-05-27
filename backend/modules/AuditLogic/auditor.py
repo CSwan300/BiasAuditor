@@ -114,11 +114,11 @@ class BiasAuditor:
         # Use single words for levels to avoid "High Risk Risk" in UI
         flagged_count = sum(1 for a in audits if a['disparity']['flag'])
         if flagged_count >= 3:
-            level = "High"
+            level = "High Risk"
         elif flagged_count > 0:
-            level = "Moderate"
+            level = "Moderate Risk"
         else:
-            level = "Low"
+            level = "Low Risk"
 
         # min_ratio of 0.2 (Bad) now becomes 80 (High Risk)
         # min_ratio of 1.0 (Good) now becomes 0 (Low Risk)

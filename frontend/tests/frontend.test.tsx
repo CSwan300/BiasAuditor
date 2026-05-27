@@ -14,7 +14,7 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByText(/BiasAuditor/i)).toBeInTheDocument();
-    expect(screen.getByText(/Algorithmic Fairness/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Algorithmic Fairness/i })).toBeInTheDocument();
     expect(screen.getByText(/Open Source Algorithmic Fairness Audit Tool/i)).toBeInTheDocument();
   });
 });
@@ -54,10 +54,13 @@ describe('Hero', () => {
   it('renders hero headline and pills', () => {
     render(<Hero />);
 
-    expect(screen.getByText(/Algorithmic Fairness/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Algorithmic Fairness/i })).toBeInTheDocument();
     expect(screen.getByText(/Intelligence Platform/i)).toBeInTheDocument();
     expect(screen.getByText(/Intersectionality/i)).toBeInTheDocument();
-    expect(screen.getByText(/Statistical Significance/i)).toBeInTheDocument();
+
+    const statElements = screen.getAllByText(/Statistical Significance/i);
+    expect(statElements.length).toBeGreaterThanOrEqual(1);
+
     expect(screen.getByText(/Equalized Odds/i)).toBeInTheDocument();
     expect(screen.getByText(/PDF Reports/i)).toBeInTheDocument();
   });
@@ -74,7 +77,7 @@ describe('RiskBanner', () => {
 
     expect(screen.getByText(/High Risk/i)).toBeInTheDocument();
     expect(screen.getByText(/1,000/i)).toBeInTheDocument();
-    expect(screen.getByText('hired')).toBeInTheDocument();
+    expect(screen.getByText(/hired/i)).toBeInTheDocument();
   });
 
   it('falls back to a default message when no flags exist', () => {
@@ -105,6 +108,16 @@ describe('AuditConfig', () => {
     render(<AuditConfig onRun={onRun} loading={false} />);
 
     const file = new File(['a,b\n1,2'], 'data.csv', { type: 'text/csv' });
-    const input = screen.getByRole('textbox', { hidden: true }) as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+    Object.defineProperty(input, 'files', {
+      value: [file],
+      writable: true
+    });
+
+    fireEvent.change(input);
+
+    expect(screen.getByText('data.csv')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /run audit/i })).not.toBeDisabled();
   });
 });

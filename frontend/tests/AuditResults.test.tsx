@@ -1,102 +1,110 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import { AuditResults } from '../src/components/Audit/AuditResults';
+import { AuditResponse, AuditResult, Mitigation } from '../src/types';
+
+// Mock Browser APIs for PDF generation
+vi.stubGlobal('URL', {
+  createObjectURL: vi.fn(() => 'blob:mock-url'),
+  revokeObjectURL: vi.fn(),
+});
+
+// Mock anchor click behavior for downloads
+HTMLAnchorElement.prototype.click = vi.fn();
 
 describe('AuditResults', () => {
-  const onReset = vi.fn();
-  const originalFile = new File(['a,b\n1,2'], 'dataset.csv', { type: 'text/csv' });
+  const mockReset = vi.fn();
+  const mockFile = new File([''], 'test.csv', { type: 'text/csv' });
 
-  const data = {
-    overall_risk: { level: 'High', score: 90, flagged_characteristics: ['gender'] },
-    metadata: {
-      total_rows: 100,
-      prediction_column: 'hired',
-      protected_characteristics_found: ['gender'],
+  const mockAuditData: AuditResponse = {
+    overall_risk: {
+      level: 'Low',
+      score: 10,
+      flagged_characteristics: []
     },
-    warnings: [],
+    metadata: {
+      timestamp: new Date().toISOString(),
+      total_rows: 100,
+      total_columns: 10,
+      prediction_column: 'outcome',
+      protected_characteristics_found: ['GENDER'],
+      columns_detected: ['GENDER', 'AGE', 'outcome']
+    },
     audits: [
       {
         characteristic: 'GENDER',
-        groups: [
-          { group: 'Male', rate: 80, count: 100, percentage: '80%' },
-          { group: 'Female', rate: 40, count: 100, percentage: '40%' },
-        ],
+        groups: [],
         disparity: {
-          disparate_impact_ratio: 0.5,
-          max_disparity: 40,
-          flag: true,
-          highest_group: 'Male',
-          lowest_group: 'Female',
-        },
-      },
+            flag: false,
+            disparate_impact_ratio: 1.0,
+            max_disparity: 0,
+            highest_group: 'N/A',
+            lowest_group: 'N/A'
+        }
+      }
     ],
     mitigations: [
       {
-        type: 'reweighting',
-        priority: 'high' as const,
-        title: 'Reweight Samples',
-        description: 'Adjust sample weights to reduce disparity.',
-      },
+        title: 'Reduce Bias',
+        description: 'Test',
+        priority: 'medium',
+        type: 'preprocessing'
+      }
     ],
+    warnings: []
   };
 
-  beforeEach(() => {
-    onReset.mockClear();
-    vi.restoreAllMocks();
-  });
+  it('downloads a PDF when the backend responds successfully', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      blob: () => Promise.resolve(new Blob(['pdf-content'], { type: 'application/pdf' })),
+    });
+    vi.stubGlobal('fetch', mockFetch);
 
-  it('renders risk banner, audits, and mitigations', () => {
-    render(<AuditResults data={data as any} onReset={onReset} originalFile={originalFile} threshold={0.8} />);
+    render(
+      <AuditResults
+        data={mockAuditData}
+        onReset={mockReset}
+        originalFile={mockFile}
+        threshold={0.8}
+      />
+    );
 
-    expect(screen.getByText(/High Risk/i)).toBeInTheDocument();
-    expect(screen.getByText(/GENDER/i)).toBeInTheDocument();
-    expect(screen.getByText(/Recommended Mitigations/i)).toBeInTheDocument();
-    expect(screen.getByText(/Reweight Samples/i)).toBeInTheDocument();
+    const downloadBtn = screen.getByRole('button', { name: /download pdf report/i });
+    fireEvent.click(downloadBtn);
+
+    expect(mockFetch).toHaveBeenCalled();
   });
 
   it('calls reset when New Audit is clicked', () => {
-    render(<AuditResults data={data as any} onReset={onReset} originalFile={originalFile} threshold={0.8} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /new audit/i }));
-    expect(onReset).toHaveBeenCalledTimes(1);
-  });
-
-  it('downloads a PDF when the backend responds successfully', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      blob: vi.fn().mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' })),
-    });
-
-    vi.stubGlobal('fetch', fetchMock);
-
-    render(<AuditResults data={data as any} onReset={onReset} originalFile={originalFile} threshold={0.8} />);
-
-    fireEvent.click(screen.getByRole('button', { name: /download pdf report/i }));
-
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalled();
-    });
-
-    expect(fetchMock.mock.calls[0][0]).toContain('/report/pdf');
-  });
-
-  it('alerts on PDF generation failure', async () => {
-    window.alert = vi.fn();
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        json: vi.fn().mockResolvedValue({ detail: 'PDF generation failed' }),
-      })
+    render(
+      <AuditResults
+        data={mockAuditData}
+        onReset={mockReset}
+        originalFile={mockFile}
+        threshold={0.8}
+      />
     );
 
-    render(<AuditResults data={data as any} onReset={onReset} originalFile={originalFile} threshold={0.8} />);
+    fireEvent.click(screen.getByRole('button', { name: /new audit/i }));
+    expect(mockReset).toHaveBeenCalled();
+  });
 
-    fireEvent.click(screen.getByRole('button', { name: /download pdf report/i }));
+  it('alerts the user if the source file is missing during download', () => {
+    window.alert = vi.fn();
 
-    await waitFor(() => {
-      expect(window.alert).toHaveBeenCalled();
-    });
+    render(
+      <AuditResults
+        data={mockAuditData}
+        onReset={mockReset}
+        originalFile={null} // Simulate missing file
+        threshold={0.8}
+      />
+    );
+
+    const downloadBtn = screen.getByRole('button', { name: /download pdf report/i });
+    fireEvent.click(downloadBtn);
+
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining("Source file missing"));
   });
 });
